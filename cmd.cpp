@@ -50,36 +50,56 @@ extern const int deserAdjust =  4; //  4    4     5    6
 CMD_PROC(scan)
 {
 	CTestboard *tb = new CTestboard;
-
-	unsigned int nDev;
 	string name;
+	vector<string> devList;
+	unsigned int nDev, nr;
 
-	if (tb->EnumFirst(nDev))
+	try
 	{
-		if (nDev == 0)
-			printf("No devices connected.\n");
-		for (unsigned int i=0; i<nDev; i++)
+		if (!tb->EnumFirst(nDev)) throw int(1);
+		for (nr=0; nr<nDev; nr++)
 		{
-			if (tb->EnumNext(name))
-			{
-				printf("%2u: %s", i, name.c_str());
-				if (tb->Open(&(name[0]),true))
-				{
-					try {
-						unsigned int bid = tb->GetBoardId();
-						printf("  BID=%2u;", bid);
-						tb->Close();
-					}
-					catch (...){
-						printf(" -> Device not identifiable\n");
-						tb->Close();
-					}
-				}
-				else printf(" - in use\n");
-			}
+			if (!tb->EnumNext(name)) throw int(2);
+			if (name.size() < 4) continue;
+			if (name.compare(0, 4, "DTB_") == 0) devList.push_back(name);
 		}
 	}
-	else puts("error\n");
+	catch (int e)
+	{
+		switch (e)
+		{
+		case 1: printf("Cannot access the USB driver\n"); break;
+		case 2: printf("Cannot read name of connected device\n"); break;
+		}
+		delete tb;
+		return true;
+	}
+
+	if (devList.size() == 0)
+	{
+		printf("no DTB connected\n");
+		return true;
+	}
+
+	for (nr = 0; nr < devList.size(); nr++)
+	try
+	{
+		printf("%10s: ", devList[nr].c_str());
+		if (!tb->Open(devList[nr],false))
+		{
+			printf("DTB in use\n");
+			continue;
+		}
+
+		unsigned int bid = tb->GetBoardId();
+		printf("DTB Id %u\n", bid);
+		tb->Close();
+	}
+	catch (...)
+	{
+		printf("DTB not identifiable\n");
+		tb->Close();
+	}
 
 	delete tb;
 
@@ -88,14 +108,32 @@ CMD_PROC(scan)
 
 CMD_PROC(open)
 {
-	char name[80];
-	PAR_STRING(name,79);
-	bool status;
-	status = tb.Open(name,false);
-	if (!status) {
-		printf("USB error: %s\n", tb.ConnectionError());
-		return false;
+	if (tb.IsConnected())
+	{
+		printf("Already connected to DTB.\n");
+		return true;
 	}
+
+	string usbId;
+	char name[80];
+	if (PAR_IS_STRING(name,79)) usbId = name;
+	else if (!tb.FindDTB(usbId)) return true;
+
+	bool status = tb.Open(usbId, false);
+
+	if (!status)
+	{
+		printf("USB error: %s\nCould not connect to DTB %s\n", tb.ConnectionError(), usbId.c_str());
+		return true;
+	}
+	printf("DTB %s opened\n", usbId.c_str());
+
+	string info;
+	tb.GetInfo(info);
+	printf("--- DTB info-------------------------------------\n"
+		   "%s"
+		   "-------------------------------------------------\n", info.c_str());
+
 	return true;
 }
 
@@ -1780,6 +1818,23 @@ CMD_PROC(mask)
 //  experimential ROC test commands
 // =======================================================================
 
+CMD_PROC(ethsend)
+{
+	char msg[45];
+	PAR_STRINGEOL(msg,45);
+	string message = msg;
+	tb.Ethernet_Send(message);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(ethrx)
+{
+	unsigned int n = tb.Ethernet_RecvPackets();
+	printf("%u packets received\n", n);
+	return true;
+}
+
 
 void PrintScale(int min, int max)
 {
@@ -2727,7 +2782,8 @@ void cmd()
 	CMD_REG(mask,     "mask                          mask all pixel and cols");
 
 	// --- experimental commands --------------------------------------------
-	CMD_REG(decoding, "decoding");
+	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
+	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
 	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
 	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
 	CMD_REG(readback, "readback                      read out ROC data");

@@ -98,7 +98,8 @@ public:
 	bool EnumNext(string &name);
 	bool Enum(unsigned int pos, string &name);
 
-	bool Open(char name[], bool init=true); // opens a connection
+	bool FindDTB(string &usbId);
+	bool Open(string &name, bool init=true); // opens a connection
 	void Close();				// closes the connection to the testboard
 
 #ifdef _WIN32
@@ -311,4 +312,7 @@ public:
 // --- Wafer test functions
 	RPC_EXPORT bool testColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
 
+	// Ethernet test functions
+	RPC_EXPORT void Ethernet_Send(string &message);
+	RPC_EXPORT uint32_t Ethernet_RecvPackets();
 };
