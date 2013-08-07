@@ -52,14 +52,15 @@ bool keypressed()
 
 bool CCmdLine::read(FILE *f)
 {
-#ifdef _WIN32	
-	if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
-#else
-	char * line = readline("> ");
-	strncpy(s, line, CMDLINELENGTH);
-	add_history(s);
-	free(line);
-#endif
+
+        if(f==stdin) {
+	        char * line = readline("> ");
+	        strncpy(s, line, CMDLINELENGTH);
+	        add_history(s);
+	        free(line);
+	}
+	else if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
+
 
 	int i = 0;
 	while (s[i] != 0 && i < CMDLINELENGTH)
