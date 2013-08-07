@@ -2171,7 +2171,7 @@ bool ReportWafer()
 	Log.section("WAFER", false);
 
 	// ProductID
-	msg = prober.printf((char*)"GetProductID");
+	msg = prober.printf("GetProductID");
 	if (strlen(msg)<=3)
 	{
 		printf("missing wafer product id!\n");
@@ -2182,7 +2182,7 @@ bool ReportWafer()
 	strcpy(g_chipdata.productId, msg+3);
 
 	// WaferID
-	msg = prober.printf((char*)"GetWaferID");
+	msg = prober.printf("GetWaferID");
 	if (strlen(msg)<=3)
 	{
 		printf(" missing wafer id!\n");
@@ -2194,7 +2194,7 @@ bool ReportWafer()
 
 	// Wafer Number
 	int num;
-	msg = prober.printf((char*)"GetWaferNum");
+	msg = prober.printf("GetWaferNum");
 	if (strlen(msg)>3) if (sscanf(msg+3, "%i", &num) == 1)
 	{
 		Log.printf(" %i\n", num);
@@ -2210,7 +2210,7 @@ bool ReportWafer()
 
 bool ReportChip(int &x, int &y)
 {
-	char *pos = prober.printf((char*)"ReadMapPosition");
+	char *pos = prober.printf("ReadMapPosition");
 	int len = strlen(pos);
 	if (len<3) return false;
 	pos += 3;
@@ -2240,7 +2240,7 @@ CMD_PROC(pr)
 	PAR_STRINGEOL(s,250);
 
 	printf(" REQ %s\n", s);
-	char *answer = prober.printf((char*)"%s", s);
+	char *answer = prober.printf("%s", s);
 	printf(" RSP %s\n", answer);
 	return true;
 }
@@ -2248,14 +2248,14 @@ CMD_PROC(pr)
 
 CMD_PROC(sep)
 {
-	prober.printf((char*)"MoveChuckSeparation");
+	prober.printf("MoveChuckSeparation");
 	return true;
 }
 
 
 CMD_PROC(contact)
 {
-	prober.printf((char*)"MoveChuckContact");
+	prober.printf("MoveChuckContact");
 	return true;
 }
 
@@ -2283,7 +2283,7 @@ bool test_wafer()
 	Log.flush();
 	printf("%3i\n", bin);
 
-	printf(" RSP %s\n", prober.printf((char*)"BinMapDie %i", bin));
+	printf(" RSP %s\n", prober.printf("BinMapDie %i", bin));
 
 	return true;
 }
@@ -2356,18 +2356,18 @@ const int CHIPOFFSET[4][4][2] =
 bool ChangeChipPos(int pos)
 {
 	int rsp;
-	char *answer = prober.printf((char*)"MoveChuckSeparation");
+	char *answer = prober.printf("MoveChuckSeparation");
 	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
 	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
 
 	int x = CHIPOFFSET[chipPos][pos][0];
 	int y = CHIPOFFSET[chipPos][pos][1];
 
-	answer = prober.printf((char*)"MoveChuckPosition %i %i H", x, y);
+	answer = prober.printf("MoveChuckPosition %i %i H", x, y);
 	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
 	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
 
-	answer = prober.printf((char*)"SetMapHome");
+	answer = prober.printf("SetMapHome");
 	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
 	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
 
@@ -2403,7 +2403,7 @@ bool goto_def(int i)
 {
 	int x, y;
 	if (!deflist[chipPos].get(i, x, y)) return false;
-	char *answer = prober.printf((char*)"StepNextDie %i %i", x, y);
+	char *answer = prober.printf("StepNextDie %i %i", x, y);
 
 	int rsp;
 	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
@@ -2423,7 +2423,7 @@ bool go_TestDefects()
 	int i = 0;
 	if (!goto_def(i)) return false;
 
-	prober.printf((char*)"MoveChuckContact");
+	prober.printf("MoveChuckContact");
 
 	do
 	{
@@ -2440,7 +2440,7 @@ bool go_TestDefects()
 		Log.puts("\n");
 		Log.flush();
 		printf("%3i\n", bin);
-		prober.printf((char*)"BinMapDie %i", bin);
+		prober.printf("BinMapDie %i", bin);
 
 		if (keypressed())
 		{
@@ -2452,7 +2452,7 @@ bool go_TestDefects()
 		i++;
 	} while (goto_def(i));
 
-	prober.printf((char*)"MoveChuckSeparation");
+	prober.printf("MoveChuckSeparation");
 
 	return true;
 }
@@ -2484,7 +2484,7 @@ bool TestSingleChip(int &bin, bool &repeat)
 bool go_TestChips()
 {
 	printf(" Begin Chip %c Test\n", chipPosChar[chipPos]);
-	prober.printf((char*)"MoveChuckContact");
+	prober.printf("MoveChuckContact");
 	tb.mDelay(200);
 
 	while (true)
@@ -2496,10 +2496,10 @@ bool go_TestChips()
 		int nRep = settings.errorRep;
 		if (nRep > 0 && repeat)
 		{
-			prober.printf((char*)"BinMapDie %i", bin);
-			prober.printf((char*)"MoveChuckSeparation");
+			prober.printf("BinMapDie %i", bin);
+			prober.printf("MoveChuckSeparation");
 			tb.mDelay(100);
-			prober.printf((char*)"MoveChuckContact");
+			prober.printf("MoveChuckContact");
 			tb.mDelay(200);
 			if (!TestSingleChip(bin,repeat)) break;
 			nRep--;
@@ -2507,14 +2507,14 @@ bool go_TestChips()
 
 		if (keypressed())
 		{
-			prober.printf((char*)"BinMapDie %i", bin);
+			prober.printf("BinMapDie %i", bin);
 			printf(" wafer test interrupted!\n");
 			break;
 		}
 
 		// prober step
 		int rsp;
-		char *answer = prober.printf((char*)"BinStepDie %i", bin);
+		char *answer = prober.printf("BinStepDie %i", bin);
 		if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
 		if (rsp != 0) printf(" RSP %s\n", answer);
 		tb.mDelay(100);
@@ -2524,7 +2524,7 @@ bool go_TestChips()
 			continue;
 		if (rsp == 703) // end of wafer -> return
 		{
-			prober.printf((char*)"MoveChuckSeparation");
+			prober.printf("MoveChuckSeparation");
 			return true;
 		}
 
@@ -2532,7 +2532,7 @@ bool go_TestChips()
 		break;
 	}
 
-	prober.printf((char*)"MoveChuckSeparation");
+	prober.printf("MoveChuckSeparation");
 	return false;
 }
 
@@ -2553,7 +2553,7 @@ CMD_PROC(go)
 	{
 		ChangeChipPos(0);
 		for (int k=0; k<4; k++) deflist[k].clear();
-		prober.printf((char*)"StepFirstDie");
+		prober.printf("StepFirstDie");
 		isRunning = true;
 	}
 
@@ -2566,7 +2566,7 @@ CMD_PROC(go)
 		if (!go_TestChips()) break;
 
 		// test defect chips
-		prober.printf((char*)"StepFirstDie");
+		prober.printf("StepFirstDie");
 		if (!go_TestDefects()) break;
 
 		// next chip position
@@ -2580,7 +2580,7 @@ CMD_PROC(go)
 			{
 				if (!ChangeChipPos(chipPos+2)) break;
 			}
-			char *answer = prober.printf((char*)"StepFirstDie");
+			char *answer = prober.printf("StepFirstDie");
 			int rsp;
 			if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
 			if (rsp != 0)
@@ -2602,14 +2602,14 @@ CMD_PROC(go)
 
 CMD_PROC(first)
 {
-	printf(" RSP %s\n", prober.printf((char*)"StepFirstDie"));
+	printf(" RSP %s\n", prober.printf("StepFirstDie"));
 	return true;
 }
 
 
 CMD_PROC(next)
 {
-	printf(" RSP %s\n", prober.printf((char*)"StepNextDie"));
+	printf(" RSP %s\n", prober.printf("StepNextDie"));
 	return true;
 }
 
@@ -2620,7 +2620,7 @@ CMD_PROC(goto)
 	PAR_INT(x, -100, 100);
 	PAR_INT(y, -100, 100);
 
-	char *msg = prober.printf((char*)"StepNextDie %i %i", x, y);
+	char *msg = prober.printf("StepNextDie %i %i", x, y);
 	printf(" RSP %s\n", msg);
 	return true;
 }
